@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class RTMPConnection(
-    private val config: PlatformConfig,
+    val config: PlatformConfig,
     val layout: Layout,
     /**
      * Factory of the [RtmpClient] port. The default throws because this project does
