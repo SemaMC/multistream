@@ -7,17 +7,26 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import io.mockk.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class WidgetRendererTest {
 
     @Before
     fun setup() {
+        // WidgetRenderer usa Dispatchers.Main para crear el WebView; en tests
+        // unitarios JVM no hay main dispatcher, así que se sustituye.
+        Dispatchers.setMain(UnconfinedTestDispatcher())
         mockkStatic(Bitmap::class)
         mockkConstructor(WebView::class)
         mockkConstructor(Canvas::class)
@@ -26,6 +35,7 @@ class WidgetRendererTest {
     @After
     fun tearDown() {
         unmockkAll()
+        Dispatchers.resetMain()
     }
 
     @Test
@@ -78,7 +88,7 @@ class WidgetRendererTest {
         val clientSlot = slot<WebViewClient>()
         every { anyConstructed<WebView>().webViewClient = capture(clientSlot) } just Runs
         every { anyConstructed<WebView>().loadUrl(any<String>()) } answers {
-            clientSlot.captured.onPageFinished(any(), "test")
+            clientSlot.captured.onPageFinished(null, "test")
         }
         every { anyConstructed<WebView>().layout(any(), any(), any(), any()) } just Runs
         every { anyConstructed<WebView>().draw(any<Canvas>()) } just Runs
@@ -105,7 +115,7 @@ class WidgetRendererTest {
         val clientSlot = slot<WebViewClient>()
         every { anyConstructed<WebView>().webViewClient = capture(clientSlot) } just Runs
         every { anyConstructed<WebView>().loadUrl(any<String>()) } answers {
-            clientSlot.captured.onPageFinished(any(), "test")
+            clientSlot.captured.onPageFinished(null, "test")
         }
         every { anyConstructed<WebView>().layout(any(), any(), any(), any()) } just Runs
         every { anyConstructed<WebView>().draw(any<Canvas>()) } just Runs

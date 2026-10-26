@@ -71,8 +71,8 @@ class DSPChainTest {
         val outputHigh = gateHigh.process(input)
         
         // Lower threshold should pass more samples
-        var passCountLow = outputLow.count { it != 0 }
-        var passCountHigh = outputHigh.count { it != 0 }
+        var passCountLow = outputLow.count { it != 0.toShort() }
+        var passCountHigh = outputHigh.count { it != 0.toShort() }
         
         assertTrue(passCountLow >= passCountHigh)
     }
@@ -87,7 +87,7 @@ class DSPChainTest {
         // Should be approximately equal (small floating point errors expected)
         assertEquals(input.size, output.size)
         for (i in input.indices) {
-            assertTrue(abs(input[i] - output[i]) <= 1)
+            assertTrue(kotlin.math.abs(input[i].toInt() - output[i].toInt()) <= 1)
         }
     }
     

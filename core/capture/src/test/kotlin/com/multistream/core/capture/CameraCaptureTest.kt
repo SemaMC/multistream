@@ -10,7 +10,7 @@ import androidx.lifecycle.LifecycleOwner
 import com.google.common.util.concurrent.ListenableFuture
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
+import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
@@ -44,7 +44,9 @@ class CameraCaptureTest {
         every { mockFuture.get() } returns mockProvider
         every { mockFuture.isDone } returns true
 
-        mockkStatic(ProcessCameraProvider::class)
+        // CameraX 1.5 expone getInstance en el companion (no @JvmStatic), por lo
+        // que se mockea el companion y no la clase ProcessCameraProvider.
+        mockkObject(ProcessCameraProvider.Companion)
         every { ProcessCameraProvider.getInstance(any()) } returns mockFuture
 
         // Ni el builder real de CameraX ni la inicialización estática de
