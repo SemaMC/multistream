@@ -1,5 +1,6 @@
 package com.multistream.feature.streamingui
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.hardware.display.DisplayManager
@@ -98,25 +99,47 @@ class StreamingViewModel @Inject constructor(
      * already stored in [SecureCredentialStore].
      */
     fun onScreenCaptureResult(resultCode: Int, data: Intent?) {
-        val granted = try {
-            consentManager.handleConsentResult(resultCode, data)
-        } catch (error: RuntimeException) {
-            _errorMessage.value = error.message ?: "Could not start screen capture"
-            false
-        }
-
-        if (!granted) {
+        // A mediaProjection foreground service cannot start before the user grants consent:
+        // startForeground() throws SecurityException without the OP_PROJECT_MEDIA grant. Check the
+        // result first; getMediaProjection() still happens only after the service is up.
+        if (resultCode != Activity.RESULT_OK || data == null) {
             _errorMessage.value = "Screen capture permission denied"
             return
         }
 
-        val projection = consentManager.getMediaProjection()
-        if (projection == null) {
-            _errorMessage.value = "Screen capture permission denied"
-            return
-        }
+        viewModelScope.launch {
+            try {
+                // Android 14+ rejects getMediaProjection() unless a foreground service of type
+                // mediaProjection is already running, so it has to start before the consent
+                // result is consumed.
+                startStreamingService()
 
-        startStreaming(projection, _platforms.value)
+                // startForeground() runs on the service's main-looper turn. A short wait is enough
+                // for the MVP; a binder/StateFlow readiness signal is the robust alternative.
+                delay(SERVICE_READINESS_DELAY_MS)
+
+                val granted = consentManager.handleConsentResult(resultCode, data)
+                if (!granted) {
+                    _errorMessage.value = "Screen capture permission denied"
+                    stopStreamingService()
+                    return@launch
+                }
+
+                val projection = consentManager.getMediaProjection()
+                if (projection == null) {
+                    _errorMessage.value = "Screen capture permission denied"
+                    stopStreamingService()
+                    return@launch
+                }
+
+                startStreaming(projection, _platforms.value)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                _errorMessage.value = error.message ?: "Could not start screen capture"
+                stopStreamingService()
+            }
+        }
     }
 
     /**
@@ -138,10 +161,6 @@ class StreamingViewModel @Inject constructor(
 
         streamingJob = viewModelScope.launch {
             try {
-                // Android 14+ requires the mediaProjection foreground service to be running for
-                // the session; start it before any destination is contacted.
-                startStreamingService()
-
                 // Connect first: with no destination there is no point in allocating codecs.
                 streamer.connect(configs)
 
@@ -284,6 +303,7 @@ class StreamingViewModel @Inject constructor(
         const val CHANNEL_COUNT = 2
         const val AUDIO_BITRATE = 128_000
         const val CAPTURE_DPI = 320
+        const val SERVICE_READINESS_DELAY_MS = 100L
     }
 }
 
@@ -311,6 +331,18 @@ class MediaProjectionDisplayCapture @Inject constructor() {
         target: Surface
     ) {
         release()
+
+        // Android 14+ requires a callback registered on the projection before the virtual display
+        // is created, or createVirtualDisplay() fails.
+        mediaProjection.registerCallback(
+            object : MediaProjection.Callback() {
+                override fun onStop() {
+                    // The system stopped the projection (for example, the user revoked it).
+                }
+            },
+            null
+        )
+
         virtualDisplay = mediaProjection.createVirtualDisplay(
             VIRTUAL_DISPLAY_NAME,
             width,
