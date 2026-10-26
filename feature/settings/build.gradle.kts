@@ -33,11 +33,13 @@ android {
 
 dependencies {
     implementation(project(":core:common"))
+    implementation(project(":core:widgets"))
     implementation(project(":data:platforms"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
     implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
     kapt(libs.hilt.compiler)
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
