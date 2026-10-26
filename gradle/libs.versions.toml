@@ -6,6 +6,7 @@ compose = "1.6.0"
 ktor = "2.3.7"
 exoplayer = "1.2.1"
 coroutines = "1.7.3"
+rootencoder = "2.4.0"
 
 [libraries]
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
@@ -32,12 +33,13 @@ oboe = { group = "com.google.oboe", name = "oboe", version = "1.8.0" }
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-websockets = { group = "io.ktor", name = "ktor-client-websockets", version.ref = "ktor" }
-rtmp-client = { group = "io.github.thibaultbee", name = "rtmp-client", version = "2.0.0" }
 
 shizuku-api = { group = "dev.rikka.shizuku", name = "api", version = "13.1.5" }
 shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version = "13.1.5" }
 
 security-crypto = { group = "androidx.security", name = "security-crypto", version = "1.1.0-alpha06" }
+
+rootencoder-library = { group = "com.github.pedroSG94.RootEncoder", name = "library", version.ref = "rootencoder" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

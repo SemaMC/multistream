@@ -10,16 +10,11 @@ class RTMPConnection(
     val config: PlatformConfig,
     val layout: Layout,
     /**
-     * Factory of the [RtmpClient] port. The default throws because this project does
-     * not yet bind a real RTMP library (see RtmpClient.kt); injectable so that the
-     * tests use a MockK mock and Task 11 wires the real client.
+     * Factory of the [RtmpClient]. Defaults to [RootEncoderRtmpAdapter] which uses RootEncoder
+     * (pedroSG94/RootEncoder), a mature Kotlin RTMP library compatible with our toolchain.
+     * Injectable for testing with mocks.
      */
-    private val clientFactory: () -> RtmpClient = {
-        error(
-            "No real RTMP client is bound yet. Inject a clientFactory " +
-                "with the RTMP library chosen in Task 11."
-        )
-    }
+    private val clientFactory: () -> RtmpClient = { RootEncoderRtmpAdapter() }
 ) {
     private var client: RtmpClient? = null
     var isConnected = false

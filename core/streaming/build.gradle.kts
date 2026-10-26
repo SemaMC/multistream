@@ -29,8 +29,9 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
     implementation(libs.hilt.android)
+    implementation(libs.rootencoder.library)
     kapt(libs.hilt.compiler)
-
+    
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.9")
     testImplementation(libs.coroutines.core)
