@@ -50,5 +50,10 @@ dependencies {
     kapt(libs.hilt.compiler)
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
+    implementation(libs.compose.navigation)
     implementation(libs.lifecycle)
+    // Necesario para ComponentActivity.setContent en MainActivity.
+    // No esta en el catalogo de versiones; se declara con coordenadas
+    // literales para no tocar archivos fuera de app/.
+    implementation("androidx.activity:activity-compose:1.8.2")
 }
