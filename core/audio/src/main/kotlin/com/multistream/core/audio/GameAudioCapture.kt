@@ -9,6 +9,7 @@ import android.media.projection.MediaProjection
 import com.multistream.core.common.Layout
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -52,7 +53,7 @@ class GameAudioCapture @Inject constructor(
         val buffer = ShortArray(BUFFER_SIZE)
         
         try {
-            while (isActive) {
+            while (currentCoroutineContext().isActive) {
                 val read = audioRecord?.read(buffer, 0, BUFFER_SIZE) ?: 0
                 if (read > 0) {
                     emit(buffer.copyOf(read))
