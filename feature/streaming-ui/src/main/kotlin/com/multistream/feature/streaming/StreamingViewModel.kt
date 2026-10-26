@@ -153,6 +153,9 @@ class StreamingViewModel @Inject constructor(
 
         if (configs.isEmpty()) {
             _errorMessage.value = "No platforms configured. Add one in Settings first."
+            // The caller may have already started the mediaProjection foreground service: without
+            // this the FGS would outlive the session, since the job (and its finally) never runs.
+            stopStreamingService()
             return
         }
 

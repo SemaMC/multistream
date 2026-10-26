@@ -112,6 +112,38 @@ class StreamingViewModelServiceTest {
     }
 
     @Test
+    fun `onScreenCaptureResult stops the service when projection is null after consent`() =
+        runTest(dispatcher) {
+            val calls = mutableListOf<String>()
+
+            val context = recordingContext(calls)
+            // Consent is granted (RESULT_OK + data), but the platform hands back no projection:
+            // the service is already up at this point, so it must be stopped again.
+            val consentManager = recordingConsentManager(calls = calls, projection = null)
+            val streamer = mockk<RTMPMultiStreamer>(relaxed = true)
+
+            val viewModel = createViewModel(
+                context = context,
+                streamer = streamer,
+                consentManager = consentManager
+            )
+
+            viewModel.onScreenCaptureResult(Activity.RESULT_OK, mockk<Intent>(relaxed = true))
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(
+                    firstServiceStart(calls),
+                    "getMediaProjection",
+                    "stopService"
+                ),
+                calls
+            )
+            assertEquals("Screen capture permission denied", viewModel.errorMessage.value)
+            coVerify(exactly = 0) { streamer.connect(any()) }
+        }
+
+    @Test
     fun `onScreenCaptureResult streams and stops the service when the session is stopped`() =
         runTest(dispatcher) {
             val calls = mutableListOf<String>()
@@ -242,7 +274,7 @@ class StreamingViewModelServiceTest {
      */
     private fun recordingConsentManager(
         calls: MutableList<String>,
-        projection: MediaProjection = mockk(relaxed = true)
+        projection: MediaProjection? = mockk(relaxed = true)
     ): MediaProjectionConsentManager {
         val context = mockk<Context>(relaxed = true)
         val projectionManager = mockk<MediaProjectionManager>(relaxed = true)
