@@ -87,6 +87,9 @@ class StreamingViewModel @Inject constructor(
     /** The whole session (setup + collectors + render loop). Cancelling it tears everything down. */
     private var streamingJob: Job? = null
 
+    /** True while the mediaProjection foreground service is up; guards against double start/stop. */
+    private var serviceRunning = false
+
     init {
         loadPlatforms()
     }
@@ -250,6 +253,9 @@ class StreamingViewModel @Inject constructor(
         _isStarting.value = false
         streamingJob?.cancel()
         streamingJob = null
+        // Stop the foreground notification as soon as the user asks, not after codec teardown:
+        // the service must never outlive the user's stop intent.
+        stopStreamingService()
     }
 
     fun addWidget(widget: Widget) {
@@ -289,16 +295,20 @@ class StreamingViewModel @Inject constructor(
     }
 
     private fun startStreamingService() {
+        if (serviceRunning) return
         val serviceIntent = Intent(context, StreamingService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(serviceIntent)
         } else {
             context.startService(serviceIntent)
         }
+        serviceRunning = true
     }
 
     private fun stopStreamingService() {
+        if (!serviceRunning) return
         context.stopService(Intent(context, StreamingService::class.java))
+        serviceRunning = false
     }
 
     private companion object {
