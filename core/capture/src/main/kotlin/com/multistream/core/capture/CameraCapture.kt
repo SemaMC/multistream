@@ -12,6 +12,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.guava.await
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -37,17 +38,28 @@ open class CameraCapture @Inject constructor(
 
     private val lifecycleOwner = AlwaysResumedLifecycleOwner()
 
-    // Executor en el que la vista previa entrega su SurfaceRequest.
-    private val surfaceExecutor = Executors.newSingleThreadExecutor()
+    // Executor en el que la vista previa entrega su SurfaceRequest. Vive atado
+    // al ciclo de la fuente: se crea en cada apertura y se apaga en [release],
+    // para que no queden hilos vivos fuera de la vida del recurso.
+    private var surfaceExecutor: ExecutorService? = null
 
     /**
      * Abre la cámara frontal y devuelve el [Surface] donde dibuja.
      *
      * Si había una cámara atada anteriormente, la desata antes de atar la
-     * nueva (CameraX solo permite un use case de preview por provider).
+     * nueva (CameraX solo permite un use case de preview por provider) y
+     * suelta el [Surface] y el executor de la apertura previa, para no
+     * filtrarlos si se reabre la cámara sin pasar por [release].
      */
     suspend fun openFrontCamera(): Surface {
         cameraProvider = ProcessCameraProvider.getInstance(context).await()
+
+        surface?.release()
+        surfaceTexture?.release()
+
+        surfaceExecutor?.shutdown()
+        val executor = Executors.newSingleThreadExecutor()
+        surfaceExecutor = executor
 
         val surfaceTexture = SurfaceTexture(0).apply {
             setDefaultBufferSize(DEFAULT_WIDTH, DEFAULT_HEIGHT)
@@ -77,15 +89,19 @@ open class CameraCapture @Inject constructor(
      */
     protected open fun createPreview(surface: Surface): UseCase {
         val preview = Preview.Builder().build()
+        // Solo se llega aquí desde openFrontCamera, que acaba de crear el
+        // executor antes de construir el use case.
+        val executor = checkNotNull(surfaceExecutor)
         preview.setSurfaceProvider { request ->
-            request.provideSurface(surface, surfaceExecutor) { }
+            request.provideSurface(surface, executor) { }
         }
         return preview
     }
 
     /**
-     * Desata la cámara del ciclo de vida y suelta el [Surface] entregado.
-     * Seguro de llamar aunque nunca se abriera la cámara.
+     * Desata la cámara del ciclo de vida y suelta el [Surface] entregado y el
+     * executor de la entrega. Seguro de llamar aunque nunca se abriera la
+     * cámara.
      */
     fun release() {
         cameraProvider?.unbindAll()
@@ -94,6 +110,8 @@ open class CameraCapture @Inject constructor(
         surface = null
         surfaceTexture?.release()
         surfaceTexture = null
+        surfaceExecutor?.shutdown()
+        surfaceExecutor = null
     }
 
     /**

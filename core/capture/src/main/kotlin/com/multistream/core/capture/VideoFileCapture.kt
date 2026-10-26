@@ -20,33 +20,45 @@ class VideoFileCapture @Inject constructor(
 ) {
     private var player: ExoPlayer? = null
     private var surface: Surface? = null
+    private var surfaceTexture: SurfaceTexture? = null
 
     /**
      * Carga y reproduce el video en [uri]; devuelve el [Surface] donde se
      * dibujan los frames decodificados.
+     *
+     * Si había un reproductor anterior, lo libera junto a su [Surface] antes
+     * de crear los nuevos, para no filtrarlos si se recarga el video sin
+     * pasar por [release].
      */
     fun loadVideo(uri: Uri): Surface {
-        player = ExoPlayer.Builder(context).build()
-        player?.setMediaItem(MediaItem.fromUri(uri))
+        release()
 
+        val player = ExoPlayer.Builder(context).build()
         val surfaceTexture = SurfaceTexture(0)
         val surface = Surface(surfaceTexture)
+
+        this.player = player
+        this.surfaceTexture = surfaceTexture
         this.surface = surface
-        player?.setVideoSurface(surface)
-        player?.prepare()
-        player?.play()
+
+        player.setMediaItem(MediaItem.fromUri(uri))
+        player.setVideoSurface(surface)
+        player.prepare()
+        player.play()
 
         return surface
     }
 
     /**
-     * Libera el reproductor y su [Surface]. Seguro de llamar aunque nunca se
-     * cargara un video.
+     * Libera el reproductor, su [Surface] y el [SurfaceTexture] de origen.
+     * Seguro de llamar aunque nunca se cargara un video.
      */
     fun release() {
         player?.release()
         player = null
         surface?.release()
         surface = null
+        surfaceTexture?.release()
+        surfaceTexture = null
     }
 }
