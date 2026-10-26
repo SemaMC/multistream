@@ -23,6 +23,13 @@
         android:label="Multistream"
         android:theme="@style/Theme.Multistream">
 
+        <!-- Requerido en Android 14+ para usar MediaProjection. La clase vive en
+             :feature:streaming-ui porque :app depende de ese módulo y no al revés. -->
+        <service
+            android:name="com.multistream.feature.streamingui.StreamingService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

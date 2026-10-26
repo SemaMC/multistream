@@ -1,9 +1,11 @@
 package com.multistream.feature.streamingui
 
+import android.content.Context
 import android.content.Intent
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.projection.MediaProjection
+import android.os.Build
 import android.view.Surface
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,6 +24,7 @@ import com.multistream.core.streaming.RTMPMultiStreamer
 import com.multistream.core.widgets.WidgetLayoutManager
 import com.multistream.data.platforms.SecureCredentialStore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -59,7 +62,8 @@ class StreamingViewModel @Inject constructor(
     private val streamer: RTMPMultiStreamer,
     private val widgetManager: WidgetLayoutManager,
     private val consentManager: MediaProjectionConsentManager,
-    private val credentialStore: SecureCredentialStore
+    private val credentialStore: SecureCredentialStore,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _isStreaming = MutableStateFlow(false)
@@ -134,6 +138,10 @@ class StreamingViewModel @Inject constructor(
 
         streamingJob = viewModelScope.launch {
             try {
+                // Android 14+ requires the mediaProjection foreground service to be running for
+                // the session; start it before any destination is contacted.
+                startStreamingService()
+
                 // Connect first: with no destination there is no point in allocating codecs.
                 streamer.connect(configs)
 
@@ -207,6 +215,7 @@ class StreamingViewModel @Inject constructor(
                 withContext(NonCancellable) {
                     runCatching { streamer.disconnectAll() }
                 }
+                stopStreamingService()
             }
         }
     }
@@ -255,6 +264,19 @@ class StreamingViewModel @Inject constructor(
         runCatching { encoder.release() }
         // Stops the projection itself, so the next session needs a fresh consent token.
         runCatching { consentManager.revokeConsent() }
+    }
+
+    private fun startStreamingService() {
+        val serviceIntent = Intent(context, StreamingService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(serviceIntent)
+        } else {
+            context.startService(serviceIntent)
+        }
+    }
+
+    private fun stopStreamingService() {
+        context.stopService(Intent(context, StreamingService::class.java))
     }
 
     private companion object {
