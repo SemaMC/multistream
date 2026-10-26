@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-}
+    }
 
 android {
     namespace = "com.multistream.core.common"
@@ -16,9 +15,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
 }
 
 dependencies {
@@ -26,3 +22,9 @@ dependencies {
     
     testImplementation("junit:junit:4.13.2")
 }
+
+
+
+
+
+

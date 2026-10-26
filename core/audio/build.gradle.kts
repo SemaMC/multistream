@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kapt)
+        alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
 
@@ -18,9 +17,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
 }
 
 dependencies {
@@ -29,10 +25,16 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
-    implementation(libs.oboe)
+    ksp(libs.hilt.compiler)
     
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.9")
     testImplementation(libs.coroutines.core)
 }
+
+
+
+
+
+
+

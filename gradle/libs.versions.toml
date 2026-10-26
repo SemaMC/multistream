@@ -1,43 +1,48 @@
 [versions]
-kotlin = "1.9.22"
-agp = "8.3.0"
-hilt = "2.50"
-compose = "1.6.0"
-ktor = "2.3.7"
-exoplayer = "1.2.1"
-coroutines = "1.7.3"
-rootencoder = "2.4.0"
+kotlin = "2.4.21"
+agp = "9.0.0"
+hilt = "2.60.1"
+compose = "1.9.0"
+ktor = "3.4.0"
+exoplayer = "1.5.0"
+coroutines = "1.10.0"
+rootencoder = "2.8.1"
+ksp = "2.3.10"
 
 [libraries]
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
 coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 
-core-ktx = { group = "androidx.core", name = "core-ktx", version = "1.12.0" }
-lifecycle = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version = "2.7.0" }
-datastore = { group = "androidx.datastore", name = "datastore-preferences", version = "1.0.0" }
-webkit = { group = "androidx.webkit", name = "webkit", version = "1.10.0" }
+core-ktx = { group = "androidx.core", name = "core-ktx", version = "1.17.0" }
+lifecycle = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version = "2.10.0" }
+datastore = { group = "androidx.datastore", name = "datastore-preferences", version = "1.2.0" }
+webkit = { group = "androidx.webkit", name = "webkit", version = "1.14.0" }
 
 compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "compose" }
-compose-material3 = { group = "androidx.compose.material3", name = "material3", version = "1.2.0" }
-compose-navigation = { group = "androidx.navigation", name = "navigation-compose", version = "2.7.7" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3", version = "1.4.0" }
+compose-activity = { group = "androidx.activity", name = "activity-compose", version = "1.11.0" }
+compose-navigation = { group = "androidx.navigation", name = "navigation-compose", version = "2.9.0" }
+compose-material-icons = { group = "androidx.compose.material", name = "material-icons-extended", version = "1.7.8" }
 
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version = "1.1.0" }
-
-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "exoplayer" }
-camerax = { group = "androidx.camera", name = "camera-camera2", version = "1.3.1" }
-oboe = { group = "com.google.oboe", name = "oboe", version = "1.8.0" }
+hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version = "1.3.0" }
 
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-websockets = { group = "io.ktor", name = "ktor-client-websockets", version.ref = "ktor" }
 
-shizuku-api = { group = "dev.rikka.shizuku", name = "api", version = "13.1.5" }
+exoplayer-core = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "exoplayer" }
+exoplayer-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "exoplayer" }
+
+camerax = { group = "androidx.camera", name = "camera-camera2", version = "1.5.0" }
+camerax-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version = "1.5.0" }
+camerax-core = { group = "androidx.camera", name = "camera-core", version = "1.5.0" }
+camerax-video = { group = "androidx.camera", name = "camera-video", version = "1.5.0" }
 shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version = "13.1.5" }
 
-security-crypto = { group = "androidx.security", name = "security-crypto", version = "1.1.0-alpha06" }
+security-crypto = { group = "androidx.security", name = "security-crypto", version = "1.1.0" }
 
 rootencoder-library = { group = "com.github.pedroSG94.RootEncoder", name = "library", version.ref = "rootencoder" }
 
@@ -45,5 +50,8 @@ rootencoder-library = { group = "com.github.pedroSG94.RootEncoder", name = "libr
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }

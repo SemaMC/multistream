@@ -58,7 +58,7 @@ class RootEncoderRtmpAdapter : RtmpClient {
     }
     
     override fun connect(url: String, streamKey: String) {
-        client = RtmpClient(connectChecker)
+        client = PedroRtmpClient(connectChecker)
         
         // RootEncoder expects full URL with stream key appended
         // Format: rtmp://host/app/streamKey
