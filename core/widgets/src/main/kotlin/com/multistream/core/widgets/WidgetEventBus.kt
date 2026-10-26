@@ -1,7 +1,7 @@
 package com.multistream.core.widgets
 
 import com.multistream.core.common.Platform
-import dagger.Inject
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import javax.inject.Singleton

@@ -42,21 +42,23 @@ class AudioEncoder @Inject constructor(
         val inputBufferIndex = encoder.dequeueInputBuffer(TIMEOUT_US)
         if (inputBufferIndex >= 0) {
             val inputBuffer = encoder.getInputBuffer(inputBufferIndex)
-            inputBuffer?.clear()
-            
-            // Convert ShortArray to ByteArray
-            val byteBuffer = java.nio.ByteBuffer.allocate(pcmData.size * 2)
-            byteBuffer.asShortBuffer().put(pcmData)
-            val byteArray = byteBuffer.array()
-            
-            inputBuffer.put(byteArray)
-            encoder.queueInputBuffer(
-                inputBufferIndex,
-                0,
-                byteArray.size,
-                presentationTimeUs,
-                0
-            )
+            inputBuffer?.let { buffer ->
+                buffer.clear()
+                
+                // Convert ShortArray to ByteArray
+                val byteBuffer = java.nio.ByteBuffer.allocate(pcmData.size * 2)
+                byteBuffer.asShortBuffer().put(pcmData)
+                val byteArray = byteBuffer.array()
+                
+                buffer.put(byteArray)
+                encoder.queueInputBuffer(
+                    inputBufferIndex,
+                    0,
+                    byteArray.size,
+                    presentationTimeUs,
+                    0
+                )
+            }
             
             presentationTimeUs += (pcmData.size * 1000000L) / 44100 / 2
         }

@@ -43,10 +43,11 @@ class WidgetRendererTest {
         
         // Capture WebViewClient to trigger onPageFinished
         val clientSlot = slot<WebViewClient>()
+        val mockWebViewForCallback = mockk<WebView>(relaxed = true)
         every { anyConstructed<WebView>().webViewClient = capture(clientSlot) } just Runs
         every { anyConstructed<WebView>().loadUrl(any<String>()) } answers {
             // Simulate page loaded immediately
-            clientSlot.captured.onPageFinished(anyConstructed<WebView>(), "test")
+            clientSlot.captured.onPageFinished(mockWebViewForCallback, "test")
         }
         every { anyConstructed<WebView>().layout(any(), any(), any(), any()) } just Runs
         every { anyConstructed<WebView>().draw(any<Canvas>()) } just Runs
@@ -77,7 +78,7 @@ class WidgetRendererTest {
         val clientSlot = slot<WebViewClient>()
         every { anyConstructed<WebView>().webViewClient = capture(clientSlot) } just Runs
         every { anyConstructed<WebView>().loadUrl(any<String>()) } answers {
-            clientSlot.captured.onPageFinished(anyConstructed<WebView>(), "test")
+            clientSlot.captured.onPageFinished(any(), "test")
         }
         every { anyConstructed<WebView>().layout(any(), any(), any(), any()) } just Runs
         every { anyConstructed<WebView>().draw(any<Canvas>()) } just Runs
@@ -104,7 +105,7 @@ class WidgetRendererTest {
         val clientSlot = slot<WebViewClient>()
         every { anyConstructed<WebView>().webViewClient = capture(clientSlot) } just Runs
         every { anyConstructed<WebView>().loadUrl(any<String>()) } answers {
-            clientSlot.captured.onPageFinished(anyConstructed<WebView>(), "test")
+            clientSlot.captured.onPageFinished(any(), "test")
         }
         every { anyConstructed<WebView>().layout(any(), any(), any(), any()) } just Runs
         every { anyConstructed<WebView>().draw(any<Canvas>()) } just Runs

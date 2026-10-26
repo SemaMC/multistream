@@ -2,7 +2,7 @@ package com.multistream.core.widgets
 
 import com.multistream.core.common.Layout
 import com.multistream.core.common.Widget
-import dagger.Inject
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
