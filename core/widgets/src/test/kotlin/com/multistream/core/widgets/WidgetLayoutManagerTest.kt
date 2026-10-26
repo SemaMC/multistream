@@ -110,4 +110,108 @@ class WidgetLayoutManagerTest {
 
         assertEquals(2, horizontalWidgets.size)
     }
+
+    @Test
+    fun `updateWidget cambia solo posicion cuando lo demas es null`() = runTest {
+        val manager = WidgetLayoutManager()
+        val horizontalWidget = Widget(
+            "1",
+            "https://example.com/h",
+            WidgetPosition(0f, 0f),
+            WidgetSize(400, 300),
+            Layout.HORIZONTAL
+        )
+        val verticalWidget = Widget(
+            "2",
+            "https://example.com/v",
+            WidgetPosition(0f, 0f),
+            WidgetSize(300, 400),
+            Layout.VERTICAL
+        )
+
+        manager.addWidget(horizontalWidget)
+        manager.addWidget(verticalWidget)
+
+        manager.updateWidget("1", WidgetPosition(50f, 60f))
+
+        val updated = manager.getWidgetsForLayout(Layout.HORIZONTAL).first().single()
+        assertEquals(WidgetPosition(50f, 60f), updated.position)
+        assertEquals(WidgetSize(400, 300), updated.size)
+        assertEquals("https://example.com/h", updated.url)
+
+        val untouched = manager.getWidgetsForLayout(Layout.VERTICAL).first().single()
+        assertEquals(verticalWidget, untouched)
+    }
+
+    @Test
+    fun `updateWidget cambia solo size cuando lo demas es null`() = runTest {
+        val manager = WidgetLayoutManager()
+        val horizontalWidget = Widget(
+            "1",
+            "https://example.com/h",
+            WidgetPosition(0f, 0f),
+            WidgetSize(400, 300),
+            Layout.HORIZONTAL
+        )
+        val verticalWidget = Widget(
+            "2",
+            "https://example.com/v",
+            WidgetPosition(0f, 0f),
+            WidgetSize(300, 400),
+            Layout.VERTICAL
+        )
+
+        manager.addWidget(horizontalWidget)
+        manager.addWidget(verticalWidget)
+
+        manager.updateWidget("1", size = WidgetSize(800, 600))
+
+        val updated = manager.getWidgetsForLayout(Layout.HORIZONTAL).first().single()
+        assertEquals(WidgetSize(800, 600), updated.size)
+        assertEquals(WidgetPosition(0f, 0f), updated.position)
+        assertEquals("https://example.com/h", updated.url)
+
+        val untouched = manager.getWidgetsForLayout(Layout.VERTICAL).first().single()
+        assertEquals(verticalWidget, untouched)
+    }
+
+    @Test
+    fun `updateWidget cambia solo url cuando lo demas es null`() = runTest {
+        val manager = WidgetLayoutManager()
+        val horizontalWidget = Widget(
+            "1",
+            "https://example.com/h",
+            WidgetPosition(0f, 0f),
+            WidgetSize(400, 300),
+            Layout.HORIZONTAL
+        )
+
+        manager.addWidget(horizontalWidget)
+
+        manager.updateWidget("1", url = "https://nueva")
+
+        val updated = manager.getWidgetsForLayout(Layout.HORIZONTAL).first().single()
+        assertEquals("https://nueva", updated.url)
+        assertEquals(WidgetPosition(0f, 0f), updated.position)
+        assertEquals(WidgetSize(400, 300), updated.size)
+    }
+
+    @Test
+    fun `updateWidget con id inexistente es un no-op`() = runTest {
+        val manager = WidgetLayoutManager()
+        val horizontalWidget = Widget(
+            "1",
+            "https://example.com/h",
+            WidgetPosition(0f, 0f),
+            WidgetSize(400, 300),
+            Layout.HORIZONTAL
+        )
+
+        manager.addWidget(horizontalWidget)
+        val before = manager.getAllWidgets().first()
+
+        manager.updateWidget("inexistente", WidgetPosition(10f, 10f))
+
+        assertEquals(before, manager.getAllWidgets().first())
+    }
 }

@@ -2,6 +2,8 @@ package com.multistream.core.widgets
 
 import com.multistream.core.common.Layout
 import com.multistream.core.common.Widget
+import com.multistream.core.common.WidgetPosition
+import com.multistream.core.common.WidgetSize
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +31,28 @@ class WidgetLayoutManager @Inject constructor() {
 
     fun removeWidget(widgetId: String) {
         widgets.update { list -> list.filter { it.id != widgetId } }
+        refreshLayouts()
+    }
+
+    fun updateWidget(
+        widgetId: String,
+        position: WidgetPosition? = null,
+        size: WidgetSize? = null,
+        url: String? = null
+    ) {
+        widgets.update { list ->
+            list.map { widget ->
+                if (widget.id != widgetId) {
+                    widget
+                } else {
+                    widget.copy(
+                        position = position ?: widget.position,
+                        size = size ?: widget.size,
+                        url = url ?: widget.url
+                    )
+                }
+            }
+        }
         refreshLayouts()
     }
 
