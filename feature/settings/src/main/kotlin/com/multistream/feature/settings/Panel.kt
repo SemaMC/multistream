@@ -11,7 +11,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -21,6 +20,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +42,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -228,18 +233,22 @@ private fun Placeholder(
         )
 
         if (webLoadFailed) {
-            Text(
-                text = "⚠",
-                style = MaterialTheme.typography.bodyLarge,
-                color = TotalBorder,
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = "Error de carga",
+                modifier = Modifier.size(24.dp),
+                tint = TotalBorder,
             )
             Text(
                 text = "Error al cargar la vista previa",
                 style = MaterialTheme.typography.bodySmall,
                 color = TotalBorder,
             )
-            TextButton(onClick = onRetry) {
-                Text(text = "Reintentar")
+            IconButton(onClick = onRetry) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Reintentar",
+                )
             }
         } else {
             val caption = when (viewState) {
@@ -438,17 +447,15 @@ fun WidgetBox(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     IconButton(onClick = { onUrlEdit(widget.url) }) {
-                        Text(
-                            text = "✎",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editar URL",
                         )
                     }
                     IconButton(onClick = onRemove) {
-                        Text(
-                            text = "✕",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Eliminar widget",
                         )
                     }
                 }
@@ -492,13 +499,8 @@ fun WidgetBox(
  * Los gestos viven en px táctiles (estado local); `onMove`/`onResize` emiten ya convertidos a
  * px-layout vía [PanelMapper], por lo que el ViewModel no convierte nada.
  *
- * El tamaño del panel se lee de las constraints durante composición (lectura, sin escribir estado
- * en el cuerpo composable) y solo se usan widgets cuando hay dimensione > 0, evitando NaN en
- * PanelMapper.
- *
- * Nota del entorno: `Modifier.onSizeChanged` no resuelve en este fork de Compose 1.9.0 (aunque
- * el toml declare ui:1.9.0). Se usa `BoxWithConstraints` leyendo `constraints` como workaround
- * mínimo del símbolo no resuelto; el resto del fichero usa APIs normales.
+ * El tamaño del panel se lee vía `onSizeChanged` y se guarda en estado; solo se usan widgets
+ * cuando hay dimensione > 0, evitando NaN en PanelMapper.
  */
 @Composable
 fun Panel(
@@ -520,31 +522,25 @@ fun Panel(
         Layout.VERTICAL -> 9f / 16f
     }
 
-    BoxWithConstraints(
+    val panelDimsState = remember { mutableStateOf<PanelDims?>(null) }
+    val draggingIdState = remember { mutableStateOf<String?>(null) }
+    val dragGuidesState = remember { mutableStateOf<Set<Guideline>>(emptySet()) }
+    val dragGuideSizeState = remember { mutableStateOf<WidgetSize>(WidgetSize(0, 0)) }
+
+    Box(
         modifier = modifier
             .aspectRatio(aspectRatio)
             .background(PanelBg)
             .border(1.dp, PanelBorder, RoundedCornerShape(4.dp))
             .clickable { onWidgetSelected(null) }
+            .onSizeChanged { size ->
+                if (size.width > 0 && size.height > 0) {
+                    panelDimsState.value = PanelDims(size.width, size.height)
+                }
+            },
     ) {
-        val constraintsWidth = constraints.maxWidth
-        val constraintsHeight = constraints.maxHeight
-        val bounded = constraintsWidth < Int.MAX_VALUE && constraintsHeight < Int.MAX_VALUE
-        val panelDims: PanelDims? =
-            if (bounded && constraintsWidth > 0 && constraintsHeight > 0) {
-                PanelDims(constraintsWidth, constraintsHeight)
-            } else {
-                null
-            }
-
-        if (panelDims == null) return@BoxWithConstraints
-
-        val density = LocalDensity.current.density
-
-        // Estado de snap y arrastre compartido por las cajas (una única instancia por Panel).
-        val draggingIdState = remember { mutableStateOf<String?>(null) }
-        val dragGuidesState = remember { mutableStateOf<Set<Guideline>>(emptySet()) }
-        val dragGuideSizeState = remember { mutableStateOf<WidgetSize>(WidgetSize(0, 0)) }
+        val panelDims = panelDimsState.value
+        if (panelDims == null) return@Box
 
         GuidesOverlay(
             guides = dragGuidesState.value,
