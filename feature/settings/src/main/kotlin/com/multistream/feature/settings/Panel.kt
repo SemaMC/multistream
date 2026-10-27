@@ -14,13 +14,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,10 +32,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -127,11 +128,11 @@ private fun GuidesOverlay(
     guides: Set<Guideline>,
     widgetSize: WidgetSize,
     layout: Layout,
-    density: Float,
 ) {
     if (guides.isEmpty()) return
 
     val layoutSize = PanelMapper.layoutSizeFor(layout)
+    val density = LocalDensity.current.density
     val stroke = 2f * density
 
     Canvas(modifier = Modifier.fillMaxSize()) {
@@ -494,6 +495,10 @@ fun WidgetBox(
  * El tamaño del panel se lee de las constraints durante composición (lectura, sin escribir estado
  * en el cuerpo composable) y solo se usan widgets cuando hay dimensione > 0, evitando NaN en
  * PanelMapper.
+ *
+ * Nota del entorno: `Modifier.onSizeChanged` no resuelve en este fork de Compose 1.9.0 (aunque
+ * el toml declare ui:1.9.0). Se usa `BoxWithConstraints` leyendo `constraints` como workaround
+ * mínimo del símbolo no resuelto; el resto del fichero usa APIs normales.
  */
 @Composable
 fun Panel(
@@ -534,6 +539,8 @@ fun Panel(
 
         if (panelDims == null) return@BoxWithConstraints
 
+        val density = LocalDensity.current.density
+
         // Estado de snap y arrastre compartido por las cajas (una única instancia por Panel).
         val draggingIdState = remember { mutableStateOf<String?>(null) }
         val dragGuidesState = remember { mutableStateOf<Set<Guideline>>(emptySet()) }
@@ -543,7 +550,6 @@ fun Panel(
             guides = dragGuidesState.value,
             widgetSize = dragGuideSizeState.value,
             layout = layout,
-            density = LocalDensity.current.density,
         )
 
         widgets.forEach { widget ->
