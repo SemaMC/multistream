@@ -73,15 +73,21 @@ enum class OutOfPanel { Inside, Partial, Total }
 /** Prioridad de la representación visual de la caja. */
 enum class BoxViewState { Normal, Selected, PartialOut, TotalOut, MissingUrl }
 
-private fun outOfPanel(position: WidgetPosition, size: WidgetSize, panel: WidgetSize): OutOfPanel {
-    val left = position.x
-    val top = position.y
-    val right = position.x + size.width
-    val bottom = position.y + size.height
-    val overlaps = left < panel.width && right > 0 && top < panel.height && bottom > 0
+/** Evalúa solapamiento de un rect (x,y,w,h) contra el panel (panelW,panelH) en el mismo espacio de coordenadas. */
+private fun outOfPanel(
+    x: Float,
+    y: Float,
+    w: Float,
+    h: Float,
+    panelW: Float,
+    panelH: Float,
+): OutOfPanel {
+    val right = x + w
+    val bottom = y + h
+    val overlaps = x < panelW && right > 0 && y < panelH && bottom > 0
     return when {
         !overlaps -> OutOfPanel.Total
-        left >= 0f && top >= 0f && right <= panel.width && bottom <= panel.height -> OutOfPanel.Inside
+        x >= 0f && y >= 0f && right <= panelW && bottom <= panelH -> OutOfPanel.Inside
         else -> OutOfPanel.Partial
     }
 }
@@ -120,7 +126,6 @@ private fun borderColor(state: BoxViewState): Color = when (state) {
 private fun GuidesOverlay(
     guides: Set<Guideline>,
     widgetSize: WidgetSize,
-    panelDims: PanelDims,
     layout: Layout,
     density: Float,
 ) {
@@ -201,11 +206,12 @@ private fun Placeholder(
     webLoadFailed: Boolean,
     onRetry: () -> Unit,
 ) {
+    val density = LocalDensity.current.density
     val captionColor = if (viewState == BoxViewState.PartialOut) PartialBorder else TotalBorder
 
     Column(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -259,6 +265,10 @@ private fun Placeholder(
  * sobrevive a las recomposiciones del Panel (p. ej. las guías de snap por frame). El commit a
  * px-layout ocurre en `onDragEnd`/`onResizeEnd`; `onDragCancel`/`onResizeCancel` descarta el
  * estado local y deja el último commit válido.
+ *
+ * El estado fuera-del-panel (`outOfPanel`) se calcula desde la posición táctil **en vivo**
+ * (`touchPosState`), así el borde amarillo/rojo y el ⚠ siguen al dedo en tiempo real durante el
+ * arrastre, y reflejan la posición commitada cuando no hay gesto en curso.
  */
 @Composable
 fun WidgetBox(
@@ -268,8 +278,7 @@ fun WidgetBox(
     showWebPreview: Boolean,
     touchPosition: WidgetPosition,
     touchSize: Size,
-    outOfPanel: OutOfPanel,
-    density: Float,
+    panelDims: PanelDims,
     onSelect: () -> Unit,
     onRemove: () -> Unit,
     onUrlEdit: (String) -> Unit,
@@ -282,11 +291,12 @@ fun WidgetBox(
     onResizeEnd: (Float, Float) -> Unit,
     onResizeCancel: () -> Unit,
 ) {
+    val density = LocalDensity.current.density
     val touchPosState = remember(widget.id) { mutableStateOf(touchPosition) }
     val touchSizeState = remember(widget.id) { mutableStateOf(touchSize) }
-    val dragStartPosState = remember { mutableStateOf<WidgetPosition?>(null) }
-    val webLoadFailedState = remember { mutableStateOf(false) }
-    val webViewRefState = remember { mutableStateOf<WebView?>(null) }
+    val dragStartPosState = remember(widget.id) { mutableStateOf<WidgetPosition?>(null) }
+    val webLoadFailedState = remember(widget.id) { mutableStateOf(false) }
+    val webViewRefState = remember(widget.id) { mutableStateOf<WebView?>(null) }
 
     // Se resincroniza con el modelo (posición/commit) cuando no hay gesto en curso.
     LaunchedEffect(widget.id, isDragging) {
@@ -298,12 +308,22 @@ fun WidgetBox(
     // Nueva URL: descarta el fallo de carga previo y recarga.
     LaunchedEffect(widget.url) {
         webLoadFailedState.value = false
-        webViewRefState.value?.loadUrl(widget.url)
+        webViewRefState.value?.reload()
     }
 
-    val viewState = boxViewState(widget, outOfPanel, selected)
-    val previewActive =
-        showWebPreview && selected && !isDragging && widget.url.isNotBlank() && !webLoadFailedState.value
+    // Estado fuera-del-panel sobre la posición táctil en vivo (sigue al dedo durante el drag).
+    val panelW = panelDims.width.toFloat()
+    val panelH = panelDims.height.toFloat()
+    val out = outOfPanel(
+        x = touchPosState.value.x,
+        y = touchPosState.value.y,
+        w = touchSizeState.value.width,
+        h = touchSizeState.value.height,
+        panelW = panelW,
+        panelH = panelH,
+    )
+
+    val viewState = boxViewState(widget, out, selected)
 
     val borderModifier = if (viewState == BoxViewState.PartialOut) Modifier
     else Modifier.border(borderWidth(viewState), borderColor(viewState), RoundedCornerShape(2.dp))
@@ -361,6 +381,9 @@ fun WidgetBox(
             }
         }
 
+        val previewActive =
+            showWebPreview && selected && !isDragging && widget.url.isNotBlank() && !webLoadFailedState.value
+
         if (previewActive) {
             AndroidView(
                 factory = { context ->
@@ -373,7 +396,11 @@ fun WidgetBox(
                                 error: WebResourceError,
                             ) {
                                 super.onReceivedError(view, request, error)
-                                webLoadFailedState.value = true
+                                // Solo un fallo del frame principal invalida la preview; un
+                                // favicon/script caído no la mata.
+                                if (request.isForMainFrame) {
+                                    webLoadFailedState.value = true
+                                }
                             }
                         }
                     }
@@ -393,6 +420,7 @@ fun WidgetBox(
                 viewState = viewState,
                 webLoadFailed = webLoadFailedState.value,
                 onRetry = {
+                    // Reintento real sobre el WebView retenido.
                     webViewRefState.value?.reload()
                     webLoadFailedState.value = false
                 },
@@ -462,6 +490,10 @@ fun WidgetBox(
  *
  * Los gestos viven en px táctiles (estado local); `onMove`/`onResize` emiten ya convertidos a
  * px-layout vía [PanelMapper], por lo que el ViewModel no convierte nada.
+ *
+ * El tamaño del panel se lee de las constraints durante composición (lectura, sin escribir estado
+ * en el cuerpo composable) y solo se usan widgets cuando hay dimensione > 0, evitando NaN en
+ * PanelMapper.
  */
 @Composable
 fun Panel(
@@ -483,36 +515,35 @@ fun Panel(
         Layout.VERTICAL -> 9f / 16f
     }
 
-    val panelDimsState = remember { mutableStateOf<PanelDims?>(null) }
-    val draggingIdState = remember { mutableStateOf<String?>(null) }
-    val dragGuidesState = remember { mutableStateOf<Set<Guideline>>(emptySet()) }
-    val dragGuideSizeState = remember { mutableStateOf<WidgetSize>(WidgetSize(0, 0)) }
-    val density = LocalDensity.current
-
     BoxWithConstraints(
         modifier = modifier
             .aspectRatio(aspectRatio)
             .background(PanelBg)
             .border(1.dp, PanelBorder, RoundedCornerShape(4.dp))
-            .clickable(enabled = panelDimsState.value != null) { onWidgetSelected(null) }
+            .clickable { onWidgetSelected(null) }
     ) {
         val constraintsWidth = constraints.maxWidth
         val constraintsHeight = constraints.maxHeight
-        val ready = constraintsWidth > 0 && constraintsWidth < Int.MAX_VALUE &&
-            constraintsHeight > 0 && constraintsHeight < Int.MAX_VALUE
-        if (ready) {
-            panelDimsState.value = PanelDims(constraintsWidth, constraintsHeight)
-        }
+        val bounded = constraintsWidth < Int.MAX_VALUE && constraintsHeight < Int.MAX_VALUE
+        val panelDims: PanelDims? =
+            if (bounded && constraintsWidth > 0 && constraintsHeight > 0) {
+                PanelDims(constraintsWidth, constraintsHeight)
+            } else {
+                null
+            }
 
-        val panelDims = panelDimsState.value
-        if (panelDims == null || !ready) return@BoxWithConstraints
+        if (panelDims == null) return@BoxWithConstraints
+
+        // Estado de snap y arrastre compartido por las cajas (una única instancia por Panel).
+        val draggingIdState = remember { mutableStateOf<String?>(null) }
+        val dragGuidesState = remember { mutableStateOf<Set<Guideline>>(emptySet()) }
+        val dragGuideSizeState = remember { mutableStateOf<WidgetSize>(WidgetSize(0, 0)) }
 
         GuidesOverlay(
             guides = dragGuidesState.value,
             widgetSize = dragGuideSizeState.value,
-            panelDims = panelDims,
             layout = layout,
-            density = density.density,
+            density = LocalDensity.current.density,
         )
 
         widgets.forEach { widget ->
@@ -523,10 +554,6 @@ fun Panel(
                 width = widget.size.width.toFloat() * panelDims.width / layoutSize.width,
                 height = widget.size.height.toFloat() * panelDims.height / layoutSize.height,
             )
-            // El estado fuera-del-panel se evalúa sobre la posición táctil en vivo mientras se
-            // arrastra, así el borde/aviso se actualizan a medida que el dedo mueve la caja.
-            val livePosition = PanelMapper.toLayoutPosition(touchPosition.x, touchPosition.y, panelDims, layout)
-            val out = outOfPanel(livePosition, widget.size, layoutSize)
 
             WidgetBox(
                 widget = widget,
@@ -535,8 +562,7 @@ fun Panel(
                 showWebPreview = showWebPreview,
                 touchPosition = touchPosition,
                 touchSize = touchSize,
-                outOfPanel = out,
-                density = density.density,
+                panelDims = panelDims,
                 onSelect = { onWidgetSelected(widget.id) },
                 onRemove = { onRemove(widget.id) },
                 onUrlEdit = { onUrlEdit(widget.id, widget.url) },
