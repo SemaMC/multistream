@@ -41,8 +41,9 @@ import com.multistream.core.common.Widget
  * or remove them so the horizontal (16:9) and vertical (9:16) compositions stay independent.
  *
  * Each layout is a tactile [Panel]: widgets are dragged to move and stretched from the corner
- * handle to resize. Toggles ("Imán" / "Vista previa web") and the selected widget are remembered
- * per layout with [rememberSaveable].
+ * handle to resize. Toggles ("Imán" / "Vista previa web") and the selected widget are kept with
+ * plain [remember] (lost on recreation, e.g. rotation); the widget layout itself lives in the
+ * Singleton WidgetLayoutManager and survives recreation.
  */
 @Composable
 fun WidgetConfigScreen(
@@ -212,7 +213,11 @@ private fun WidgetSection(
         widgets.forEach { widget ->
             WidgetConfigCard(
                 widget = widget,
-                onRemove = { onRemove(widget.id) }
+                onRemove = {
+                    // Si se borra el widget seleccionado vía ✕, no dejar la selección huérfana.
+                    if (selectedId == widget.id) onSelectionChange(null)
+                    onRemove(widget.id)
+                }
             )
         }
     }
@@ -238,7 +243,7 @@ fun WidgetConfigCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = widget.url,
+                    text = if (widget.url.isBlank()) "falta URL" else widget.url,
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (widget.url.isBlank()) {
                         MaterialTheme.colorScheme.error
