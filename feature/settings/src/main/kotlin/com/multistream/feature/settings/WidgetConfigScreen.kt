@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -19,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,8 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.multistream.core.common.Layout
@@ -39,6 +39,10 @@ import com.multistream.core.common.Widget
 /**
  * Shows the configured overlay widgets grouped by the layout they belong to, and lets the user add
  * or remove them so the horizontal (16:9) and vertical (9:16) compositions stay independent.
+ *
+ * Each layout is a tactile [Panel]: widgets are dragged to move and stretched from the corner
+ * handle to resize. Toggles ("Imán" / "Vista previa web") and the selected widget are remembered
+ * per layout with [rememberSaveable].
  */
 @Composable
 fun WidgetConfigScreen(
@@ -46,6 +50,16 @@ fun WidgetConfigScreen(
 ) {
     val horizontalWidgets by viewModel.horizontalWidgets.collectAsState()
     val verticalWidgets by viewModel.verticalWidgets.collectAsState()
+
+    // Widget seleccionado por layout: el dado de alta nace seleccionado en su layout.
+    var selectedHorizontal by remember { mutableStateOf<String?>(null) }
+    var selectedVertical by remember { mutableStateOf<String?>(null) }
+
+    // Toggles por layout.
+    var snapHorizontal by remember { mutableStateOf(true) }
+    var snapVertical by remember { mutableStateOf(true) }
+    var webPreviewHorizontal by remember { mutableStateOf(false) }
+    var webPreviewVertical by remember { mutableStateOf(false) }
 
     var addingLayout by remember { mutableStateOf<Layout?>(null) }
 
@@ -64,26 +78,51 @@ fun WidgetConfigScreen(
 
         WidgetSection(
             title = "Horizontal Layout Widgets",
+            layout = Layout.HORIZONTAL,
             widgets = horizontalWidgets,
+            selectedId = selectedHorizontal,
+            onSelectionChange = { selectedHorizontal = it },
+            snapEnabled = snapHorizontal,
+            onSnapChange = { snapHorizontal = it },
+            showWebPreview = webPreviewHorizontal,
+            onPreviewChange = { webPreviewHorizontal = it },
             onAdd = { addingLayout = Layout.HORIZONTAL },
-            onRemove = viewModel::removeWidget
+            onRemove = { viewModel.removeWidget(it) },
+            onMove = { id, x, y -> viewModel.moveWidget(id, x, y, snapHorizontal) },
+            onResize = { id, w, h -> viewModel.resizeWidget(id, w, h) },
+            onUrlEdit = { id, url -> viewModel.setWidgetUrl(id, url) },
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         WidgetSection(
             title = "Vertical Layout Widgets",
+            layout = Layout.VERTICAL,
             widgets = verticalWidgets,
+            selectedId = selectedVertical,
+            onSelectionChange = { selectedVertical = it },
+            snapEnabled = snapVertical,
+            onSnapChange = { snapVertical = it },
+            showWebPreview = webPreviewVertical,
+            onPreviewChange = { webPreviewVertical = it },
             onAdd = { addingLayout = Layout.VERTICAL },
-            onRemove = viewModel::removeWidget
+            onRemove = { viewModel.removeWidget(it) },
+            onMove = { id, x, y -> viewModel.moveWidget(id, x, y, snapVertical) },
+            onResize = { id, w, h -> viewModel.resizeWidget(id, w, h) },
+            onUrlEdit = { id, url -> viewModel.setWidgetUrl(id, url) },
         )
     }
 
     addingLayout?.let { layout ->
         AddWidgetDialog(
             layout = layout,
-            onSave = { url, x, y, width, height ->
-                viewModel.addWidget(layout, url, x, y, width, height)
+            onSave = { url ->
+                // El widget nace centrado (ViewModel) y se selecciona al instante para editar su URL in-situ.
+                val id = viewModel.addWidget(layout, url)
+                when (layout) {
+                    Layout.HORIZONTAL -> selectedHorizontal = id
+                    Layout.VERTICAL -> selectedVertical = id
+                }
                 addingLayout = null
             },
             onCancel = { addingLayout = null }
@@ -91,27 +130,77 @@ fun WidgetConfigScreen(
     }
 }
 
-/** One layout group: its title, an add button, an empty state and one card per widget. */
+/** One layout group: its title, an add button, the "Imán" / "Vista previa web" toggles, the
+ * tactile [Panel] and one card per widget below it. */
 @Composable
 private fun WidgetSection(
     title: String,
+    layout: Layout,
     widgets: List<Widget>,
+    selectedId: String?,
+    onSelectionChange: (String?) -> Unit,
+    snapEnabled: Boolean,
+    onSnapChange: (Boolean) -> Unit,
+    showWebPreview: Boolean,
+    onPreviewChange: (Boolean) -> Unit,
     onAdd: () -> Unit,
-    onRemove: (String) -> Unit
+    onRemove: (String) -> Unit,
+    onMove: (String, Float, Float) -> Unit,
+    onResize: (String, Int, Int) -> Unit,
+    onUrlEdit: (String, String) -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium
-        )
-        TextButton(onClick = onAdd) {
-            Text("Add")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium
+            )
+            TextButton(onClick = onAdd) {
+                Text("Add")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Switch(
+                checked = snapEnabled,
+                onCheckedChange = onSnapChange
+            )
+            Text(text = "Imán", style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.width(16.dp))
+            Switch(
+                checked = showWebPreview,
+                onCheckedChange = onPreviewChange
+            )
+            Text(text = "Vista previa web", style = MaterialTheme.typography.bodySmall)
         }
     }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Panel(
+        layout = layout,
+        widgets = widgets,
+        snapEnabled = snapEnabled,
+        showWebPreview = showWebPreview,
+        selectedId = selectedId,
+        onWidgetSelected = onSelectionChange,
+        onMove = onMove,
+        onResize = onResize,
+        onUrlEdit = onUrlEdit,
+        onRemove = onRemove,
+        modifier = Modifier.fillMaxWidth()
+    )
 
     if (widgets.isEmpty()) {
         Text(
@@ -129,7 +218,8 @@ private fun WidgetSection(
     }
 }
 
-/** Summary of one overlay widget with the button that removes it. */
+/** Summary of one overlay widget with the button that removes it. A blank URL is marked in red
+ * ("falta URL") so widgets lost outside the panel stay recoverable from this list. */
 @Composable
 fun WidgetConfigCard(
     widget: Widget,
@@ -147,7 +237,15 @@ fun WidgetConfigCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(widget.url)
+                Text(
+                    text = widget.url,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (widget.url.isBlank()) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    }
+                )
                 Text("Position: (${widget.position.x}, ${widget.position.y})")
                 Text("Size: ${widget.size.width}x${widget.size.height}")
             }
@@ -162,33 +260,17 @@ fun WidgetConfigCard(
 }
 
 /**
- * Asks for the overlay URL, its position and its size. Saving stays blocked until the URL is not
- * blank and the numbers parse, so an unusable widget is never stored.
+ * Asks for the overlay URL only. The widget is born centred (480x270) via
+ * [WidgetConfigViewModel.addWidget], so there are no X/Y/Width/Height fields; an empty URL is
+ * allowed and shows as "falta URL" in the panel and the card list.
  */
 @Composable
 private fun AddWidgetDialog(
     layout: Layout,
-    onSave: (url: String, x: Float, y: Float, width: Int, height: Int) -> Unit,
+    onSave: (url: String) -> Unit,
     onCancel: () -> Unit
 ) {
     var url by remember(layout) { mutableStateOf("") }
-    var x by remember(layout) { mutableStateOf("0") }
-    var y by remember(layout) { mutableStateOf("0") }
-    var width by remember(layout) {
-        mutableStateOf(if (layout == Layout.VERTICAL) "1080" else "1920")
-    }
-    var height by remember(layout) {
-        mutableStateOf(if (layout == Layout.VERTICAL) "1920" else "1080")
-    }
-
-    val parsedX = x.trim().toFloatOrNull()
-    val parsedY = y.trim().toFloatOrNull()
-    val parsedWidth = width.trim().toIntOrNull()
-    val parsedHeight = height.trim().toIntOrNull()
-    val canSave = url.isNotBlank() &&
-        parsedX != null && parsedY != null &&
-        parsedWidth != null && parsedWidth > 0 &&
-        parsedHeight != null && parsedHeight > 0
 
     AlertDialog(
         onDismissRequest = onCancel,
@@ -202,54 +284,13 @@ private fun AddWidgetDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField(
-                        value = x,
-                        onValueChange = { x = it },
-                        label = "X",
-                        isDecimal = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberField(
-                        value = y,
-                        onValueChange = { y = it },
-                        label = "Y",
-                        isDecimal = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField(
-                        value = width,
-                        onValueChange = { width = it },
-                        label = "Width",
-                        isDecimal = false,
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberField(
-                        value = height,
-                        onValueChange = { height = it },
-                        label = "Height",
-                        isDecimal = false,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    onSave(
-                        url,
-                        parsedX ?: 0f,
-                        parsedY ?: 0f,
-                        parsedWidth ?: 0,
-                        parsedHeight ?: 0
-                    )
-                },
-                enabled = canSave
+                    onSave(url)
+                }
             ) {
                 Text("Add")
             }
@@ -259,26 +300,5 @@ private fun AddWidgetDialog(
                 Text("Cancel")
             }
         }
-    )
-}
-
-/** Single-line numeric field: decimal for coordinates, integer for sizes. */
-@Composable
-private fun NumberField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    isDecimal: Boolean,
-    modifier: Modifier = Modifier
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(
-            keyboardType = if (isDecimal) KeyboardType.Decimal else KeyboardType.Number
-        ),
-        modifier = modifier
     )
 }

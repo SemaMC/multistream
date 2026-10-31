@@ -47,23 +47,19 @@ class WidgetConfigViewModelTest {
 
     @Test
     fun `addWidget stores the widget in its own layout only`() {
-        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/overlay", 10f, 20f, 320, 180)
+        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/overlay")
 
         val horizontal = viewModel.horizontalWidgets.value
         assertEquals(1, horizontal.size)
         assertEquals("https://example.com/overlay", horizontal.single().url)
         assertEquals(Layout.HORIZONTAL, horizontal.single().layout)
-        assertEquals(10f, horizontal.single().position.x)
-        assertEquals(20f, horizontal.single().position.y)
-        assertEquals(320, horizontal.single().size.width)
-        assertEquals(180, horizontal.single().size.height)
         assertTrue(viewModel.verticalWidgets.value.isEmpty())
     }
 
     @Test
     fun `each layout keeps its own widgets`() {
-        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/h", 0f, 0f, 100, 100)
-        viewModel.addWidget(Layout.VERTICAL, "https://example.com/v", 0f, 0f, 200, 200)
+        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/h")
+        viewModel.addWidget(Layout.VERTICAL, "https://example.com/v")
 
         assertEquals(1, viewModel.horizontalWidgets.value.size)
         assertEquals(1, viewModel.verticalWidgets.value.size)
@@ -72,8 +68,8 @@ class WidgetConfigViewModelTest {
 
     @Test
     fun `removeWidget drops only the requested widget`() {
-        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a", 0f, 0f, 100, 100)
-        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/b", 0f, 0f, 100, 100)
+        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a")
+        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/b")
         val removed = viewModel.horizontalWidgets.value.first()
 
         viewModel.removeWidget(removed.id)
@@ -85,8 +81,8 @@ class WidgetConfigViewModelTest {
 
     @Test
     fun `addWidget generates a different id for every widget`() {
-        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a", 0f, 0f, 100, 100)
-        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/b", 0f, 0f, 100, 100)
+        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a")
+        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/b")
 
         val ids = viewModel.horizontalWidgets.value.map { it.id }
         assertEquals(ids.size, ids.toSet().size)
@@ -94,7 +90,7 @@ class WidgetConfigViewModelTest {
 
     @Test
     fun `moveWidget aplica snap y actualiza posicion`() {
-        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a", 4f, 0f, 100, 100)
+        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a")
         val id = viewModel.horizontalWidgets.value.single().id
 
         viewModel.moveWidget(id, 4f, 0f, snapEnabled = true)
@@ -106,7 +102,7 @@ class WidgetConfigViewModelTest {
 
     @Test
     fun `moveWidget con snap off respeta el valor dado`() {
-        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a", 0f, 0f, 100, 100)
+        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a")
         val id = viewModel.horizontalWidgets.value.single().id
 
         viewModel.moveWidget(id, 4f, 0f, snapEnabled = false)
@@ -118,18 +114,18 @@ class WidgetConfigViewModelTest {
 
     @Test
     fun `moveWidget con id inexistente es no-op`() {
-        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a", 10f, 20f, 320, 180)
+        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a")
 
         viewModel.moveWidget("does-not-exist", 0f, 0f, snapEnabled = true)
 
         val widget = viewModel.horizontalWidgets.value.single()
-        assertEquals(10f, widget.position.x)
-        assertEquals(20f, widget.position.y)
+        assertEquals(720f, widget.position.x)
+        assertEquals(405f, widget.position.y)
     }
 
     @Test
     fun `resizeWidget clampa al minimo`() {
-        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a", 0f, 0f, 480, 270)
+        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a")
         val id = viewModel.horizontalWidgets.value.single().id
 
         viewModel.resizeWidget(id, 50, 0)
@@ -141,14 +137,14 @@ class WidgetConfigViewModelTest {
 
     @Test
     fun `resizeWidget sin tocar posicion`() {
-        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a", 10f, 20f, 320, 180)
+        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a")
         val id = viewModel.horizontalWidgets.value.single().id
 
         viewModel.resizeWidget(id, 640, 360)
 
         val resized = viewModel.horizontalWidgets.value.single()
-        assertEquals(10f, resized.position.x)
-        assertEquals(20f, resized.position.y)
+        assertEquals(720f, resized.position.x)
+        assertEquals(405f, resized.position.y)
         assertEquals(640, resized.size.width)
         assertEquals(360, resized.size.height)
     }
@@ -168,16 +164,16 @@ class WidgetConfigViewModelTest {
 
     @Test
     fun `setWidgetUrl actualiza la url sin tocar position ni size`() {
-        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a", 10f, 20f, 320, 180)
+        viewModel.addWidget(Layout.HORIZONTAL, "https://example.com/a")
         val id = viewModel.horizontalWidgets.value.single().id
 
         viewModel.setWidgetUrl(id, "https://example.com/b")
 
         val updated = viewModel.horizontalWidgets.value.single()
         assertEquals("https://example.com/b", updated.url)
-        assertEquals(10f, updated.position.x)
-        assertEquals(20f, updated.position.y)
-        assertEquals(320, updated.size.width)
-        assertEquals(180, updated.size.height)
+        assertEquals(720f, updated.position.x)
+        assertEquals(405f, updated.position.y)
+        assertEquals(480, updated.size.width)
+        assertEquals(270, updated.size.height)
     }
 }

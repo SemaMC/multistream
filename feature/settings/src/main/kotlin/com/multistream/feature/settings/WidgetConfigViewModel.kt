@@ -35,10 +35,13 @@ class WidgetConfigViewModel @Inject constructor(
     val horizontalWidgets: StateFlow<List<Widget>> = widgetsIn(Layout.HORIZONTAL)
     val verticalWidgets: StateFlow<List<Widget>> = widgetsIn(Layout.VERTICAL)
 
-    /** Adds a widget centred in [layout] with the default size, generating its id. */
-    fun addWidget(layout: Layout, url: String = "") {
+    /**
+     * Adds a widget centred in [layout] with the default size (480x270), generating its id.
+     * Returns the id of the newly created widget so the editor can select it right away.
+     */
+    fun addWidget(layout: Layout, url: String = ""): String {
         val panel = PanelMapper.layoutSizeFor(layout)
-        addWidget(
+        return addWidget(
             layout = layout,
             url = url,
             position = WidgetPosition(
@@ -46,25 +49,6 @@ class WidgetConfigViewModel @Inject constructor(
                 y = (panel.height - DEFAULT_HEIGHT) / 2f
             ),
             size = WidgetSize(DEFAULT_WIDTH, DEFAULT_HEIGHT)
-        )
-    }
-
-    /**
-     * Adds a widget to [layout] at explicit layout coordinates. The caller validates the values.
-     *
-     * Kept only so the current screen and tests keep compiling; the screen moves widgets through
-     * the panel now, so new code should use `addWidget(layout, url)` and then [moveWidget].
-     */
-    @Deprecated(
-        message = "Add a centred widget with addWidget(layout, url) and place it through the panel.",
-        replaceWith = ReplaceWith("addWidget(layout, url)")
-    )
-    fun addWidget(layout: Layout, url: String, x: Float, y: Float, width: Int, height: Int) {
-        addWidget(
-            layout = layout,
-            url = url,
-            position = WidgetPosition(x, y),
-            size = WidgetSize(width, height)
         )
     }
 
@@ -102,16 +86,23 @@ class WidgetConfigViewModel @Inject constructor(
         widgetManager.removeWidget(id)
     }
 
-    private fun addWidget(layout: Layout, url: String, position: WidgetPosition, size: WidgetSize) {
+    private fun addWidget(
+        layout: Layout,
+        url: String,
+        position: WidgetPosition,
+        size: WidgetSize
+    ): String {
+        val id = UUID.randomUUID().toString()
         widgetManager.addWidget(
             Widget(
-                id = UUID.randomUUID().toString(),
+                id = id,
                 url = url.trim(),
                 position = position,
                 size = size,
                 layout = layout
             )
         )
+        return id
     }
 
     private fun widgetsIn(layout: Layout): StateFlow<List<Widget>> =

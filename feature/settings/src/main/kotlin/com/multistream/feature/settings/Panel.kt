@@ -22,12 +22,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -315,10 +315,11 @@ fun WidgetBox(
             touchSizeState.value = touchSize
         }
     }
-    // Nueva URL: descarta el fallo de carga previo y recarga.
+    // Nueva URL: descarta el fallo de carga previo y navega a ella (reload() podría cancelar
+    // la navegación a la URL nueva).
     LaunchedEffect(widget.url) {
         webLoadFailedState.value = false
-        webViewRefState.value?.reload()
+        webViewRefState.value?.loadUrl(widget.url)
     }
 
     // Estado fuera-del-panel sobre la posición táctil en vivo (sigue al dedo durante el drag).
@@ -438,7 +439,8 @@ fun WidgetBox(
         }
 
         if (selected && !isDragging && !previewActive) {
-            // Punto de entrada para editar URL y eliminar la caja seleccionada (Task 6 lo integra).
+            // Edición in-situ de la URL de la caja seleccionada (Task 6): se commitea al
+            // ViewModel vía onUrlEdit; el ✕ elimina la caja. Mientras hay preview web no se edita.
             Box(
                 modifier = Modifier.offset(4.dp, 4.dp),
             ) {
@@ -446,12 +448,13 @@ fun WidgetBox(
                     modifier = Modifier,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    IconButton(onClick = { onUrlEdit(widget.url) }) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Editar URL",
-                        )
-                    }
+                    OutlinedTextField(
+                        value = widget.url,
+                        onValueChange = { onUrlEdit(it) },
+                        singleLine = true,
+                        label = { Text("URL") },
+                        modifier = Modifier.width(140.dp)
+                    )
                     IconButton(onClick = onRemove) {
                         Icon(
                             imageVector = Icons.Default.Close,
