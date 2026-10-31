@@ -199,7 +199,12 @@ private fun WidgetSection(
         onMove = onMove,
         onResize = onResize,
         onUrlEdit = onUrlEdit,
-        onRemove = onRemove,
+        // El ✕ de la caja in-panel también debe deseleccionar si borra al seleccionado,
+        // para no dejar la selección huérfana (equivalente al ✕ de la tarjeta).
+        onRemove = { id ->
+            if (selectedId == id) onSelectionChange(null)
+            onRemove(id)
+        },
         modifier = Modifier.fillMaxWidth()
     )
 

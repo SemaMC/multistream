@@ -570,7 +570,7 @@ fun Panel(
                 panelDims = panelDims,
                 onSelect = { onWidgetSelected(widget.id) },
                 onRemove = { onRemove(widget.id) },
-                onUrlEdit = { onUrlEdit(widget.id, widget.url) },
+                onUrlEdit = { nuevoTexto -> onUrlEdit(widget.id, nuevoTexto) },
                 onDragStart = { draggingIdState.value = widget.id },
                 onDrag = { x, y ->
                     draggingIdState.value = widget.id
