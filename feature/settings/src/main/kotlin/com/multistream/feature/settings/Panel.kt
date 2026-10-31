@@ -29,7 +29,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -315,13 +314,6 @@ fun WidgetBox(
             touchSizeState.value = touchSize
         }
     }
-    // Nueva URL: descarta el fallo de carga previo y navega a ella (reload() podría cancelar
-    // la navegación a la URL nueva).
-    LaunchedEffect(widget.url) {
-        webLoadFailedState.value = false
-        webViewRefState.value?.loadUrl(widget.url)
-    }
-
     // Estado fuera-del-panel sobre la posición táctil en vivo (sigue al dedo durante el drag).
     val panelW = panelDims.width.toFloat()
     val panelH = panelDims.height.toFloat()
@@ -395,6 +387,17 @@ fun WidgetBox(
         val previewActive =
             showWebPreview && selected && !isDragging && widget.url.isNotBlank() && !webLoadFailedState.value
 
+        // Navega a la URL solo cuando el preview está activo y hay URL: no se relanza por cada
+        // recomposición (p. ej. guías de snap por frame durante un arrastre del Panel). Se relanza
+        // al cambiar la URL o al activarse/desactivarse el preview, por lo que cubre la vuelta de
+        // webLoadFailed (previewActive vuelve a true al reintentar y recarga la URL retenida).
+        LaunchedEffect(widget.url, previewActive) {
+            if (previewActive && widget.url.isNotBlank()) {
+                webLoadFailedState.value = false
+                webViewRefState.value?.loadUrl(widget.url)
+            }
+        }
+
         if (previewActive) {
             AndroidView(
                 factory = { context ->
@@ -419,9 +422,6 @@ fun WidgetBox(
                 modifier = Modifier.fillMaxSize(),
                 update = { webView ->
                     webViewRefState.value = webView
-                    if (widget.url.isNotBlank()) {
-                        webView.loadUrl(widget.url)
-                    }
                 },
             )
         } else {
