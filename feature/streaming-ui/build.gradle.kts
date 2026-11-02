@@ -42,6 +42,7 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
+    implementation(libs.compose.adaptive)
     implementation(libs.compose.material.icons)
     implementation(libs.compose.navigation)
     implementation(libs.lifecycle)
