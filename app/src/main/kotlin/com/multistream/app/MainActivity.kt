@@ -28,12 +28,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Edge-to-edge is enforced from targetSdk 35+. The app theme is dark-only (MultistreamTheme);
-        // the system bars stay transparent, with the bar styles below unchanged from the previous
-        // light implementation.
+        // Edge-to-edge is enforced from targetSdk 35+. The app theme is dark-only (MultistreamTheme),
+        // so the system bars stay transparent and their icons stay light against the dark background.
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT)
         )
 
         requestPermissionLauncher.launch(
