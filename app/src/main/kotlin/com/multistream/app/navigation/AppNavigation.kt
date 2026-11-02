@@ -29,7 +29,9 @@ fun AppNavigation() {
             startDestination = "go-live"
         ) {
             composable("go-live") {
-                StreamingScreen()
+                StreamingScreen(
+                    onOpenConfiguration = { navController.navigate("configuracion") }
+                )
             }
             composable("configuracion") {
                 SettingsScreen(navController = navController)
