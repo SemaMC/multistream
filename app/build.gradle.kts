@@ -44,6 +44,7 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
     implementation(libs.compose.navigation)
+    implementation(libs.compose.navigation.suite)
     implementation(libs.lifecycle)
     implementation(libs.compose.activity)
 }
