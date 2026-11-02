@@ -10,7 +10,7 @@ No entra: nuevos backends de configuración, i18n, cambios de encoding/streaming
 1. Estructura A: solo Go Live (inicial) + Configuración. Motivo: el usuario la eligió explícitamente; Home se fusiona en Go Live y desaparece el hub de secciones como páginas.
 2. Two-pane real en Configuración: izquierda opciones (Plataformas, Widgets), derecha editor embebido con la opción marcada. Motivo: el usuario lo exigió ("a la izquierda las opciones, a la derecha el menú"); elimina las rutas `settings/platforms` y `settings/widgets` como páginas aparte, que era la causa raíz del bug (desmontaban el panel y huérfana la selección, informe explore ses_e64d833f2ffeL5nOkW8lbscPFr).
 3. Sin botón "Open configuration" ni placeholder intermedio: tocar opción muestra su editor directamente. Motivo: era el segundo tap que confundía ("me manda a otra página").
-4. Previews y controles compactos (vertical sobre todo) + toggles como chips sencillos, todo visible en una pantalla. Motivo: pedido explícito; hoy exigen scroll largo.
+4. Previews y controles compactos (vertical sobre todo) + controles flotantes sencillos: las previews compactas incluyen la horizontal y la vertical del editor Y la vertical de Go Live, y los controles son flotantes y sencillos (los toggles, como chips), todo visible en una pantalla. Motivo: pedido explícito; hoy exigen scroll largo.
 5. Barra inferior de estado en Go Live: fila por plataforma con dot verde (lista) / rojo (pendiente) + nombre, desde `HomeViewModel.platforms`. Motivo: pedido explícito; sin tocar ViewModels.
 6. Acceso directo a edición de widgets + botón tuerca a Configuración desde Go Live; flecha ← en Configuración vuelve a Go Live. Motivo: pedidos explícitos.
 
