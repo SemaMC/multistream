@@ -2,7 +2,6 @@ package com.multistream.app.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cast
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -30,23 +29,22 @@ private data class RootDestination(
     val icon: ImageVector,
     /** Ruta del NavHost a la que navega el item desde la barra/rail. */
     val route: String,
-    /** Prefijo de ruta que marca el item seleccionado (`settings/platforms` -> `settings`). */
+    /** Prefijo de ruta que marca el item seleccionado (`go-live` -> `go-live`). */
     val routePrefix: String
 )
 
 private val RootDestinations = listOf(
-    RootDestination(label = "Home", icon = Icons.Filled.Home, route = "home", routePrefix = "home"),
     RootDestination(
         label = "Go Live",
         icon = Icons.Filled.Cast,
-        route = "streaming",
-        routePrefix = "streaming"
+        route = "go-live",
+        routePrefix = "go-live"
     ),
     RootDestination(
         label = "Settings",
         icon = Icons.Filled.Settings,
-        route = "settings",
-        routePrefix = "settings"
+        route = "configuracion",
+        routePrefix = "configuracion"
     )
 )
 

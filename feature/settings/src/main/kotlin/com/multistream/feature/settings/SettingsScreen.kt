@@ -231,7 +231,9 @@ private fun SettingsDetailPane(
 ) {
     Box(modifier = modifier) {
         when (selectedOptionId) {
-            "platforms" -> PlatformConfigScreen()
+            "platforms" -> Box(modifier = Modifier.safeDrawingPadding()) {
+                PlatformConfigScreen()
+            }
             "widgets" -> WidgetConfigScreen()
             else -> {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
