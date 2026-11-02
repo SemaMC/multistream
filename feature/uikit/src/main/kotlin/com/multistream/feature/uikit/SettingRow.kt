@@ -1,5 +1,6 @@
 package com.multistream.feature.uikit
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,7 +34,9 @@ import androidx.compose.ui.unit.dp
  * - el icono lleva siempre `contentDescription` no nulo ([iconDescription], por defecto el
  *   propio título), cumpliendo "contentDescription en todo icono";
  * - deshabilitada: `enabled = false` anula el click y baja la opacidad del título, y el
- *   caller comunica el motivo en el texto de [trailing] ("Soon"), no solo por color.
+ *   caller comunica el motivo en el texto de [trailing] ("Soon"), no solo por color;
+ * - seleccionada: [selected] marca la fila con acento sin ser solo color: borde de acento
+ *   y título/icono tintados con el acento.
  */
 @Composable
 fun SettingRow(
@@ -43,6 +46,7 @@ fun SettingRow(
     modifier: Modifier = Modifier,
     iconDescription: String? = null,
     enabled: Boolean = true,
+    selected: Boolean = false,
     onClick: (() -> Unit)? = null
 ) {
     val rowModifier = if (onClick != null) {
@@ -56,7 +60,16 @@ fun SettingRow(
     Surface(
         modifier = rowModifier,
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant
+        color = if (selected) {
+            MultistreamColors.Accent.copy(alpha = 0.14f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        },
+        border = if (selected) {
+            BorderStroke(width = 1.dp, color = MultistreamColors.Accent)
+        } else {
+            null
+        }
     ) {
         Row(
             modifier = Modifier
@@ -67,13 +80,13 @@ fun SettingRow(
             Icon(
                 imageVector = icon,
                 contentDescription = iconDescription ?: title,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = if (selected) MultistreamColors.Accent else MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = title,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = if (selected) MultistreamColors.Accent else MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier
                     .weight(1f, fill = false)
@@ -121,6 +134,7 @@ private fun SettingRowTabletPreview() {
                 title = "Streaming",
                 icon = Icons.Filled.Cast,
                 onClick = {},
+                selected = true,
                 trailing = { StatusChip(text = "Live", active = true) }
             )
             SettingRow(
