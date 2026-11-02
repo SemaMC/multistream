@@ -40,6 +40,7 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
     implementation(libs.compose.navigation)
+    implementation(libs.compose.adaptive)
     implementation(libs.lifecycle)
 
     testImplementation("junit:junit:4.13.2")
