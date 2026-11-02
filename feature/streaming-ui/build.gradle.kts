@@ -33,6 +33,7 @@ dependencies {
     implementation(project(":core:streaming"))
     implementation(project(":core:widgets"))
     implementation(project(":data:platforms"))
+    implementation(project(":feature:uikit"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)

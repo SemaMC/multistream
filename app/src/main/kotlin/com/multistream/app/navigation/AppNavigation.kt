@@ -21,27 +21,36 @@ import com.multistream.feature.streamingui.StreamingScreen
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(
-        navController = navController,
-        startDestination = "home"
-    ) {
-        composable("home") {
-            HomeScreen(navController = navController)
-        }
-        composable("settings") {
-            SettingsScreen(navController = navController)
-        }
-        composable("settings/platforms") {
-            PlatformConfigScreen()
-        }
-        composable("settings/widgets") {
-            WidgetConfigScreen()
-        }
-        composable(
-            "streaming/{platform}",
-            arguments = listOf(navArgument("platform") { type = NavType.StringType })
+    RootScaffold(navController = navController) {
+        NavHost(
+            navController = navController,
+            startDestination = "home"
         ) {
-            StreamingScreen()
+            composable("home") {
+                HomeScreen(navController = navController)
+            }
+            // Destino raiz del item "Go Live" de la barra/rail. StreamingScreen no usa el
+            // argumento `platform` (emite a todas las plataformas configuradas), asi que este
+            // destino no lleva argumento; la ruta `streaming/{platform}` (desde Home) queda
+            // intacta y resalta el mismo item de la barra.
+            composable("streaming") {
+                StreamingScreen()
+            }
+            composable("settings") {
+                SettingsScreen(navController = navController)
+            }
+            composable("settings/platforms") {
+                PlatformConfigScreen()
+            }
+            composable("settings/widgets") {
+                WidgetConfigScreen()
+            }
+            composable(
+                "streaming/{platform}",
+                arguments = listOf(navArgument("platform") { type = NavType.StringType })
+            ) {
+                StreamingScreen()
+            }
         }
     }
 }

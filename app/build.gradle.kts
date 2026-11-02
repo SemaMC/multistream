@@ -37,6 +37,7 @@ dependencies {
     implementation(project(":data:platforms"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:streaming-ui"))
+    implementation(project(":feature:uikit"))
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

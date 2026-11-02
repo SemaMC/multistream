@@ -9,8 +9,8 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.MaterialTheme
 import com.multistream.app.navigation.AppNavigation
+import com.multistream.feature.uikit.MultistreamTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -28,9 +28,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Edge-to-edge is enforced from targetSdk 35+. The app always renders a light theme,
-        // so force dark system-bar icons regardless of the device's night mode; otherwise white
-        // icons land on white content and the clock/battery become unreadable.
+        // Edge-to-edge is enforced from targetSdk 35+. The app theme is dark-only (MultistreamTheme);
+        // the system bars stay transparent, with the bar styles below unchanged from the previous
+        // light implementation.
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-            MaterialTheme {
+            MultistreamTheme {
                 AppNavigation()
             }
         }
