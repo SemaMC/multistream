@@ -28,6 +28,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,8 +43,8 @@ import com.multistream.core.common.Widget
  *
  * Each layout is a tactile [Panel]: widgets are dragged to move and stretched from the corner
  * handle to resize. Toggles ("Imán" / "Vista previa web") and the selected widget are kept with
- * plain [remember] (lost on recreation, e.g. rotation); the widget layout itself lives in the
- * Singleton WidgetLayoutManager and survives recreation.
+ * [rememberSaveable], so they survive recreation (e.g. rotation); the widget layout itself lives in
+ * the Singleton WidgetLayoutManager and survives recreation.
  */
 @Composable
 fun WidgetConfigScreen(
@@ -53,14 +54,14 @@ fun WidgetConfigScreen(
     val verticalWidgets by viewModel.verticalWidgets.collectAsState()
 
     // Widget seleccionado por layout: el dado de alta nace seleccionado en su layout.
-    var selectedHorizontal by remember { mutableStateOf<String?>(null) }
-    var selectedVertical by remember { mutableStateOf<String?>(null) }
+    var selectedHorizontal by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedVertical by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Toggles por layout.
-    var snapHorizontal by remember { mutableStateOf(true) }
-    var snapVertical by remember { mutableStateOf(true) }
-    var webPreviewHorizontal by remember { mutableStateOf(false) }
-    var webPreviewVertical by remember { mutableStateOf(false) }
+    var snapHorizontal by rememberSaveable { mutableStateOf(true) }
+    var snapVertical by rememberSaveable { mutableStateOf(true) }
+    var webPreviewHorizontal by rememberSaveable { mutableStateOf(false) }
+    var webPreviewVertical by rememberSaveable { mutableStateOf(false) }
 
     var addingLayout by remember { mutableStateOf<Layout?>(null) }
 
