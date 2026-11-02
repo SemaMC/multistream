@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.multistream.core.common.Layout
 import com.multistream.core.common.Widget
+import com.multistream.feature.uikit.MultistreamTheme
 
 /**
  * Shows the configured overlay widgets grouped by the layout they belong to, and lets the user add
@@ -66,71 +67,76 @@ fun WidgetConfigScreen(
 
     var addingLayout by remember { mutableStateOf<Layout?>(null) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .safeDrawingPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Widget Configuration",
-            style = MaterialTheme.typography.headlineMedium
-        )
+    // Envuelta en el tema del uikit: autocontenida (sobrevive a un root que no la provea) y
+    // todos los tokens (texto, superficie, error) caen al "azul noche". El Panel táctil y su
+    // lógica quedan intactos dentro; solo cambia qué tema los rodea.
+    MultistreamTheme {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Widget Configuration",
+                style = MaterialTheme.typography.headlineMedium
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        WidgetSection(
-            title = "Horizontal Layout Widgets",
-            layout = Layout.HORIZONTAL,
-            widgets = horizontalWidgets,
-            selectedId = selectedHorizontal,
-            onSelectionChange = { selectedHorizontal = it },
-            snapEnabled = snapHorizontal,
-            onSnapChange = { snapHorizontal = it },
-            showWebPreview = webPreviewHorizontal,
-            onPreviewChange = { webPreviewHorizontal = it },
-            onAdd = { addingLayout = Layout.HORIZONTAL },
-            onRemove = { viewModel.removeWidget(it) },
-            onMove = { id, x, y -> viewModel.moveWidget(id, x, y, snapHorizontal) },
-            onResize = { id, w, h -> viewModel.resizeWidget(id, w, h) },
-            onUrlEdit = { id, url -> viewModel.setWidgetUrl(id, url) },
-        )
+            WidgetSection(
+                title = "Horizontal Layout Widgets",
+                layout = Layout.HORIZONTAL,
+                widgets = horizontalWidgets,
+                selectedId = selectedHorizontal,
+                onSelectionChange = { selectedHorizontal = it },
+                snapEnabled = snapHorizontal,
+                onSnapChange = { snapHorizontal = it },
+                showWebPreview = webPreviewHorizontal,
+                onPreviewChange = { webPreviewHorizontal = it },
+                onAdd = { addingLayout = Layout.HORIZONTAL },
+                onRemove = { viewModel.removeWidget(it) },
+                onMove = { id, x, y -> viewModel.moveWidget(id, x, y, snapHorizontal) },
+                onResize = { id, w, h -> viewModel.resizeWidget(id, w, h) },
+                onUrlEdit = { id, url -> viewModel.setWidgetUrl(id, url) },
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        WidgetSection(
-            title = "Vertical Layout Widgets",
-            layout = Layout.VERTICAL,
-            widgets = verticalWidgets,
-            selectedId = selectedVertical,
-            onSelectionChange = { selectedVertical = it },
-            snapEnabled = snapVertical,
-            onSnapChange = { snapVertical = it },
-            showWebPreview = webPreviewVertical,
-            onPreviewChange = { webPreviewVertical = it },
-            onAdd = { addingLayout = Layout.VERTICAL },
-            onRemove = { viewModel.removeWidget(it) },
-            onMove = { id, x, y -> viewModel.moveWidget(id, x, y, snapVertical) },
-            onResize = { id, w, h -> viewModel.resizeWidget(id, w, h) },
-            onUrlEdit = { id, url -> viewModel.setWidgetUrl(id, url) },
-        )
-    }
+            WidgetSection(
+                title = "Vertical Layout Widgets",
+                layout = Layout.VERTICAL,
+                widgets = verticalWidgets,
+                selectedId = selectedVertical,
+                onSelectionChange = { selectedVertical = it },
+                snapEnabled = snapVertical,
+                onSnapChange = { snapVertical = it },
+                showWebPreview = webPreviewVertical,
+                onPreviewChange = { webPreviewVertical = it },
+                onAdd = { addingLayout = Layout.VERTICAL },
+                onRemove = { viewModel.removeWidget(it) },
+                onMove = { id, x, y -> viewModel.moveWidget(id, x, y, snapVertical) },
+                onResize = { id, w, h -> viewModel.resizeWidget(id, w, h) },
+                onUrlEdit = { id, url -> viewModel.setWidgetUrl(id, url) },
+            )
+        }
 
-    addingLayout?.let { layout ->
-        AddWidgetDialog(
-            layout = layout,
-            onSave = { url ->
-                // El widget nace centrado (ViewModel) y se selecciona al instante para editar su URL in-situ.
-                val id = viewModel.addWidget(layout, url)
-                when (layout) {
-                    Layout.HORIZONTAL -> selectedHorizontal = id
-                    Layout.VERTICAL -> selectedVertical = id
-                }
-                addingLayout = null
-            },
-            onCancel = { addingLayout = null }
-        )
+        addingLayout?.let { layout ->
+            AddWidgetDialog(
+                layout = layout,
+                onSave = { url ->
+                    // El widget nace centrado (ViewModel) y se selecciona al instante para editar su URL in-situ.
+                    val id = viewModel.addWidget(layout, url)
+                    when (layout) {
+                        Layout.HORIZONTAL -> selectedHorizontal = id
+                        Layout.VERTICAL -> selectedVertical = id
+                    }
+                    addingLayout = null
+                },
+                onCancel = { addingLayout = null }
+            )
+        }
     }
 }
 
